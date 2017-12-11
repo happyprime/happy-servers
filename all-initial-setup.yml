@@ -22,22 +22,22 @@
     - name: Change the root password
       user: >
         name=root
-        password="{{ temp_root_password }}"
+        password="{{ server_root_password }}"
 
     - name: Create default user with a temporary password
       user: >
-        name={{ default_user_name }}
-        password="{{ temp_user_password }}"
+        name={{ server_user_name }}
+        password="{{ server_user_password }}"
         shell=/bin/bash
 
     - name: Add default user to sudoers
       lineinfile: dest=/etc/sudoers
-                  regexp="{{ default_user_name }} ALL"
-                  line="{{ default_user_name }} ALL=(ALL) ALL"
+                  regexp="{{ server_user_name }} ALL"
+                  line="{{ server_user_name }} ALL=(ALL) ALL"
                   state=present
 
     - name: Add public key for default user
-      authorized_key: user={{ default_user_name }} key="{{ lookup('file', item) }}"
+      authorized_key: user={{ server_user_name }} key="{{ lookup('file', item) }}"
       with_items:
         - ./keys/jeremyfelt
 
