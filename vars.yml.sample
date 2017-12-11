@@ -1,0 +1,16 @@
+# Copy this file to vars.yml and change the variables as needed.
+
+# The username that will be used when connecting to the server.
+server_user_name: happyadmin
+
+# Generated passwords with the following command on OSX:
+#
+# `python -c "from passlib.hash import sha512_crypt; import getpass; print(sha512_crypt.encrypt(getpass.getpass()))"`
+#
+# If passlib is not yet installed, use `pip install passlib`.
+
+# The password for the user. (Set to "password" in this example)
+server_user_password: $6$rounds=656000$.Bh2ulQiF5f.pN4I$9eMSQ9IvIXGh.8FUM1C/vKgCxAC58l4kZAK8OVKCkfgjZ/OcryPKTn.gVL8IfIhoibyEeM6Jj2/1f/B9U/UTy0
+
+# The root password. (Set to "password" in this example)
+server_root_password: $6$rounds=656000$.Bh2ulQiF5f.pN4I$9eMSQ9IvIXGh.8FUM1C/vKgCxAC58l4kZAK8OVKCkfgjZ/OcryPKTn.gVL8IfIhoibyEeM6Jj2/1f/B9U/UTy0

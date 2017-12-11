@@ -1,0 +1,88 @@
+---
+- name: Initial server setup as the root user
+  hosts: all
+
+  # The root user will be available when the script first runs. Once
+  # successful, the root user will not be able to connect again.
+  remote_user: root
+  become: no
+
+  vars_files:
+    - vars.yml
+
+  tasks:
+    - name: Update APT package cache
+      apt: update_cache=yes
+
+    # Runs `apt dist-upgrade` to upgrade and handle dependencies.
+    - name: Run apt upgrade dist
+      apt:
+          upgrade: dist
+
+    - name: Change the root password
+      user: >
+        name=root
+        password="{{ temp_root_password }}"
+
+    - name: Create default user with a temporary password
+      user: >
+        name={{ default_user_name }}
+        password="{{ temp_user_password }}"
+        shell=/bin/bash
+
+    - name: Add default user to sudoers
+      lineinfile: dest=/etc/sudoers
+                  regexp="{{ default_user_name }} ALL"
+                  line="{{ default_user_name }} ALL=(ALL) ALL"
+                  state=present
+
+    - name: Add public key for default user
+      authorized_key: user={{ default_user_name }} key="{{ lookup('file', item) }}"
+      with_items:
+        - ./keys/jeremyfelt
+
+    - name: Disallow root SSH access
+      action: lineinfile dest=/etc/ssh/sshd_config regexp="^PermitRootLogin" line="PermitRootLogin no" state=present
+      notify: Restart ssh
+
+    - name: Disallow password authentication
+      action: lineinfile dest=/etc/ssh/sshd_config regexp="^PasswordAuthentication" line="PasswordAuthentication no" state=present
+      notify: Restart ssh
+
+    - name: Install required packages
+      apt: state=installed pkg={{ item }}
+      with_items:
+        - ufw
+        - fail2ban
+        - unattended-upgrades
+
+    # Only allow SSH and HTTP(S) traffic by default.
+    - name: Allow ssh and http(s) connections
+      ufw: rule=allow port={{ item }}
+      with_items:
+        - 22
+        - 80
+        - 443
+
+    - name: Enable ufw/firewall
+      ufw: state=enabled policy=deny
+
+    - name: Add a configuration for periodic unattended updates.
+      template:
+        src: templates/10periodic.j2
+        dest: /etc/apt/apt.conf.d/10periodic
+        owner: root
+        group: root
+        mode: 0644
+
+    - name: Add a configuration for unattended auto security updates.
+      template:
+        src: templates/50unattended-upgrades.j2
+        dest: /etc/apt/apt.conf.d/50unattended-upgrades
+        owner: root
+        group: root
+        mode: 0644
+
+  handlers:
+    - name: Restart ssh
+      service: name=ssh state=restarted
